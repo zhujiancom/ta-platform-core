@@ -1,0 +1,57 @@
+my-server-host: 192.168.1.43
+my-db-server-host: 192.168.1.19
+server:
+  port: 9092
+spring:
+  application:
+    name: core-service-api
+  #redis 配置
+  redis:
+    database: 1
+    host: ${my-server-host}
+    lettuce:
+      pool:
+        max-active: 8   #最大连接数据库连接数,设 0 为没有限制
+        max-idle: 8     #最大等待连接中的数量,设 0 为没有限制
+        max-wait: -1ms  #最大建立连接等待时间。如果超过此时间将接到异常。设为-1表示无限制。
+        min-idle: 0     #最小等待连接中的数量,设 0 为没有限制
+      shutdown-timeout: 100ms
+    password: ''
+    port: 6379
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  datasource:
+    url: jdbc:mysql://${my-db-server-host}:3306/ta_platform_authority?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=UTC&tinyInt1isBit=false
+    username: root
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      # 获取连接等待超时的时间
+      max-wait: 60000
+      # 间隔多久进行一次检测， 检测需要关闭的空闲连接， 单位： 毫秒
+      time-between-eviction-runs-millis: 60000
+      # 配置一个连接在池中最小生存时间， 单位： 毫秒
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: true
+      test-on-return: true
+      # 打开PSCache, 并且指定每个连接上的PSCache大小
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      # 配置监控统计拦截的filters， 去掉后监控界面的SQL无法统计， 'wall' 用于防火墙, 如果需要flyway起作用， 则需将wall这个过滤器去除
+      filters: stat,slf4j
+      # 通过 connectProperties属性来打开mergeSql功能， 慢Sql记录
+      connect-properties: druid.stat.mergeSql\=true;druid.stat.slowSqlMillis\=5000
+      # 配置druid监控页面
+      stat-view-servlet:
+        login-username: admin
+        login-password: 123456
+      db-type: com.alibaba.druid.pool.DruidDataSource
+    nacos:
+      discovery:
+        server-addr: ${my-server-host}:8848
