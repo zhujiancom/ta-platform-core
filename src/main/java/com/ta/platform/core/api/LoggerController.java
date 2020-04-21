@@ -1,6 +1,6 @@
 package com.ta.platform.core.api;
 
-import com.ta.platform.core.api.vo.SysLogModel;
+import com.ta.platform.common.system.model.SysLogModel;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
  * Description:
  */
 @RestController
-@RequestMapping("/logger")
+@RequestMapping("/api/syslog")
 public class LoggerController {
 
-    @RequestMapping(value = "/add", method = RequestMethod.POST)
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
     public void addLog(@RequestBody SysLogModel model){
         //TODO
     }

@@ -1,7 +1,7 @@
 package com.ta.platform.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ta.platform.core.model.SysLog;
+import com.ta.platform.core.entity.SysLog;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
 

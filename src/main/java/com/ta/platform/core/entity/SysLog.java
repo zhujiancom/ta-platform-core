@@ -1,7 +1,8 @@
-package com.ta.platform.core.model;
+package com.ta.platform.core.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ta.platform.common.aspect.annotation.Dict;
 import lombok.Data;
@@ -18,6 +19,7 @@ import java.util.Date;
  * Time: 7:16 PM
  * Description:
  */
+@TableName("t_sys_log")
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)

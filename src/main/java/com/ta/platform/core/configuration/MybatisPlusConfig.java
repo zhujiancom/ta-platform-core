@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
  * Description: Mybatis-plus 配置
  */
 @Configuration
-@MapperScan(value = {"com.ta.platform.core.**.mapper*"})
+@MapperScan(value = {"com.ta.platform.**.mapper*"})
 public class MybatisPlusConfig {
     /**
      * 分页插件
