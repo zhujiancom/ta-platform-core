@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ta.platform.common.aspect.annotation.Dict;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -63,21 +64,25 @@ public class SysNotice implements Serializable {
     /**
      * 优先级
      */
+    @Dict(dictCode = "priority")
     private String priority;
 
     /**
      * 消息类型： 1-通知公告； 2-系统消息
      */
+    @Dict(dictCode = "notice_type")
     private String category;
 
     /**
      * 接收者类型： 1-指定用户；2-指定角色； 3-所有用户
      */
+    @Dict(dictCode = "receiver_type")
     private String receiverType;
 
     /**
      * 消息发布状态： 0-未发布；1-已发布；2-已撤销
      */
+    @Dict(dictCode = "publish_state")
     private String publishState;
 
     /**
@@ -97,6 +102,7 @@ public class SysNotice implements Serializable {
     /**
      * 删除状态
      */
+    @Dict(dictCode = "del_flag")
     private String delFlag;
 
     /**创建人*/

@@ -8,6 +8,7 @@ import com.ey.tax.toolset.core.BeanUtil;
 import com.ey.tax.toolset.core.StrUtil;
 import com.ey.tax.toolset.core.exceptions.ExceptionUtil;
 import com.ta.platform.common.api.vo.Result;
+import com.ta.platform.common.tool.DictHelper;
 import com.ta.platform.core.entity.SysNotice;
 import com.ta.platform.core.model.SysNoticeModel;
 import com.ta.platform.core.service.impl.SysNoticeServiceImpl;
@@ -20,6 +21,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.ta.platform.common.constant.CommonConstant.CATEGORY_ANNOUNCE;
 import static com.ta.platform.common.constant.CommonConstant.CATEGORY_NOTICE;
@@ -49,8 +53,8 @@ public class SysNoticeController {
      * @return
      */
     @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public Result<IPage<SysNotice>> noticePageList(SysNoticeModel sysNoticeModel, @RequestParam(name="pageNo", defaultValue = "1") Integer pageNo, @RequestParam(name="pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest request){
-        Result<IPage<SysNotice>> result = new Result<>();
+    public Result<Object> noticePageList(SysNoticeModel sysNoticeModel, @RequestParam(name="pageNo", defaultValue = "1") Integer pageNo, @RequestParam(name="pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest request){
+        Result<Object> result = new Result<>();
         SysNotice sysNotice = new SysNotice();
         BeanUtil.copyProperties(sysNoticeModel, sysNotice);
         sysNotice.setDelFlag(DEL_FLAG_0.toString());
@@ -67,12 +71,18 @@ public class SysNoticeController {
             }
         }
         IPage<SysNotice> pageList = noticeService.page(page, queryWrapper);
+
         log.info("查询当前页："+pageList.getCurrent());
         log.info("查询当前页数量："+pageList.getSize());
         log.info("查询结果数量："+pageList.getRecords().size());
         log.info("数据总数："+pageList.getTotal());
+
+        List<JSONObject> realPageList = pageList.getRecords().stream().map(item -> DictHelper.parseDictField(item)).collect(Collectors.toList());
+        IPage newPageList = pageList;
+        newPageList.setRecords(realPageList);
+
         result.setSuccess(true);
-        result.setResult(pageList);
+        result.setResult(JSONObject.toJSON(newPageList));
         return result;
     }
 

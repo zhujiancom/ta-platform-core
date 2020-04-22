@@ -1,5 +1,6 @@
 package com.ta.platform.core.api;
 
+import com.alibaba.fastjson.JSONObject;
 import com.ey.tax.toolset.core.exceptions.ExceptionUtil;
 import com.ta.platform.common.api.vo.Result;
 import com.ta.platform.common.modules.system.service.ISysDictService;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Creator: zhuji
@@ -31,6 +33,13 @@ public class SysDictController {
     public Result<Object> getDictItemList(@RequestParam("dictCode") String dictCode){
         try {
             List<DictModel> dictModelList = dictService.queryDictItemsByCode(dictCode);
+//            List<JSONObject> dictItemList = dictModelList.stream().map(item -> {
+//                JSONObject jsonObject = new JSONObject();
+//                jsonObject.put("value",item.getValue());
+//                jsonObject.put("label", item.getText());
+//                jsonObject.put("title", item.getText());
+//                return jsonObject;
+//            }).collect(Collectors.toList());
             return Result.ok(dictModelList);
         } catch (Exception e) {
             String errMsg = e.getMessage();
@@ -40,5 +49,14 @@ public class SysDictController {
             }
             return Result.error(errMsg);
         }
+    }
+
+    @RequestMapping(value = "/item-label", method = RequestMethod.GET)
+    public Result<String> getDictText(@RequestParam("dictCode") String dictCode, @RequestParam("itemCode") String itemCode){
+        Result<String> result = new Result<>();
+        String text = dictService.queryDictTextByKey(dictCode, itemCode);
+        result.setResult(text);
+        result.setSuccess(true);
+        return result;
     }
 }
