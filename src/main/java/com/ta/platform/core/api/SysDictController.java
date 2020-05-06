@@ -1,10 +1,12 @@
 package com.ta.platform.core.api;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ey.tax.toolset.core.StrUtil;
+import com.ey.tax.toolset.core.collection.CollectionUtil;
 import com.ey.tax.toolset.core.exceptions.ExceptionUtil;
 import com.ta.platform.common.api.vo.Result;
 import com.ta.platform.common.constant.CacheConstant;
@@ -62,6 +64,12 @@ public class SysDictController {
         QueryWrapper<SysDict> queryWrapper = SearchableQueryWrapper.buildQueryWrapper(dict, request.getParameterMap());
         Page<SysDict> page = new Page(pageNo, pageSize);
         IPage<SysDict> pageList = dictService.page(page, queryWrapper);
+        if(CollectionUtil.isEmpty(pageList.getRecords()) && pageList.getTotal() > 0){
+            // 业务场景：如果pageSize=10， 列表一共11条数据， 用户在第二页删除1条数据之后， 此处查找的数据是null， 需自动往前翻一页之后重新查询
+            pageNo--;
+            page = new Page(pageNo, pageSize);
+            pageList = dictService.page(page, queryWrapper);
+        }
 
         log.debug("查询当前页："+pageList.getCurrent());
         log.debug("查询当前页数量："+pageList.getSize());
@@ -106,6 +114,7 @@ public class SysDictController {
     public Result<Object> delete(@RequestParam(name="id",required=true) String id) {
         Result<Object> result = new Result<Object>();
         boolean ok = dictService.removeById(id);
+        dictItemService.remove(new LambdaQueryWrapper<SysDictItem>().eq(SysDictItem::getDictId,id));
         if(ok) {
             result.success("删除成功!");
         }else{
@@ -197,9 +206,9 @@ public class SysDictController {
         QueryWrapper<SysDictItem> queryWrapper = SearchableQueryWrapper.buildQueryWrapper(dictItem,request.getParameterMap());
         Page<SysDictItem> page = new Page<>(pageNo, pageSize);
         IPage<SysDictItem> pageList = dictItemService.page(page, queryWrapper);
-        List<JSONObject> realPageList = pageList.getRecords().stream().map(item -> DictHelper.parseDictField(item)).collect(Collectors.toList());
-        IPage newPageList = pageList;
-        newPageList.setRecords(realPageList);
+//        List<JSONObject> realPageList = pageList.getRecords().stream().map(item -> DictHelper.parseDictField(item)).collect(Collectors.toList());
+//        IPage newPageList = pageList;
+//        newPageList.setRecords(realPageList);
         result.setSuccess(true);
         result.setResult(pageList);
         return result;
