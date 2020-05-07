@@ -146,8 +146,8 @@ public class SysDictController {
         Result<Object> result = new Result<>();
         // 清空字典缓存
         try {
-            Set keys= redisTemplate.keys(CacheConstant.SYS_DICT_CACHE);
-            Set keys2 = redisTemplate.keys(CacheConstant.SYS_DICT_TABLE_CACHE);
+            Set keys= redisTemplate.keys(CacheConstant.SYS_DICT_CACHE+"*");
+            Set keys2 = redisTemplate.keys(CacheConstant.SYS_DICT_TABLE_CACHE+"*");
             Set keys3 = redisTemplate.keys(CacheConstant.SYS_DEPARTS_CACHE + "*");
             Set keys4 = redisTemplate.keys(CacheConstant.SYS_DEPART_IDS_CACHE + "*");
             redisTemplate.delete(keys);
