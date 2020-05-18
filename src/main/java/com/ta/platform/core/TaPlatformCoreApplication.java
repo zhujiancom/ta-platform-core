@@ -14,10 +14,16 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 @Slf4j
+
 @EnableSwagger2
 @EnableDiscoveryClient
 @ComponentScan("com.ta.platform")
-@SpringBootApplication
+@SpringBootApplication(
+        exclude ={
+                org.apache.shiro.spring.boot.autoconfigure.ShiroAutoConfiguration.class,
+                org.apache.shiro.spring.boot.autoconfigure.ShiroAnnotationProcessorAutoConfiguration.class
+        }
+)
 @EnableFeignClients(basePackages = {"com.ta.platform.**.clientapi"})
 public class TaPlatformCoreApplication {
 
