@@ -1,12 +1,13 @@
 package com.ta.platform.core.configuration.interceptor;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.ey.tax.toolset.core.ReflectUtil;
 import com.ey.tax.toolset.core.StrUtil;
 import com.ta.platform.common.api.vo.Result;
 import com.ta.platform.common.clientapi.GatewayAPIClient;
-import com.ta.platform.common.constant.CommonConstant;
-import com.ta.platform.common.system.model.LoginUser;
 import com.ta.platform.common.tool.ApplicationContextProvider;
+import com.ta.platform.common.vo.LoginUserRedisVo;
 import com.ta.platform.core.DefConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.binding.MapperMethod.ParamMap;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Component;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Field;
 import java.util.Date;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -158,18 +160,18 @@ public class MybatisInterceptor implements Interceptor {
 	}
 
 	private String getLoginUserName() {
-//		LoginUser sysUser = null;
-//		try {
-//			sysUser = SecurityUtils.getSubject().getPrincipal() != null ? (LoginUser) SecurityUtils.getSubject().getPrincipal() : null;
-//		} catch (Exception e) {
-//			sysUser = null;
-//		}
-//		return sysUser;
 		HttpServletRequest request = ApplicationContextProvider.getHttpServletRequest();
 		String token = request.getHeader(DefConstants.X_ACCESS_TOKEN);
-		Result<Object> result = gatewayAPIClient.getLoginUser(token);
-		if(StrUtil.isNotBlank((String)result.getResult())){
-			return result.getResult().toString();
+		Result<LoginUserRedisVo> result = gatewayAPIClient.getLoginUser(token);
+		if(result.getData() != null){
+			// 1. 如果真正的接口返回string字符串， 则通过JSONObject 转换
+//			JSONObject jsonObject = JSONObject.parseObject(result.getData().toString());
+//			return jsonObject.getString("username");
+			// 2. 如果真正的接口返回对象， 但是网关FeignClient返回的是Object， 则data类型是map， 可以通过JSON.toJavaObject转换成和真正的接口返回一样的对象
+//			LoginUserRedisVo loginUserRedisVo = JSON.toJavaObject(new JSONObject((Map<String, Object>) result.getData()),LoginUserRedisVo.class);
+			// 3. 网关直接返回对象
+			LoginUserRedisVo loginUserRedisVo = result.getData();
+			return loginUserRedisVo.getUsername();
 		}
 		return null;
 	}

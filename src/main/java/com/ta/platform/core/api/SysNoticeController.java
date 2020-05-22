@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ey.tax.toolset.core.BeanUtil;
 import com.ey.tax.toolset.core.StrUtil;
 import com.ey.tax.toolset.core.exceptions.ExceptionUtil;
+import com.ta.platform.common.api.ApiCode;
 import com.ta.platform.common.api.vo.Result;
 import com.ta.platform.common.tool.DictHelper;
 import com.ta.platform.core.entity.SysNotice;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -80,10 +80,7 @@ public class SysNoticeController {
         List<JSONObject> realPageList = pageList.getRecords().stream().map(item -> DictHelper.parseDictField(item)).collect(Collectors.toList());
         IPage newPageList = pageList;
         newPageList.setRecords(realPageList);
-
-        result.setSuccess(true);
-        result.setResult(JSONObject.toJSON(newPageList));
-        return result;
+        return Result.ok(JSONObject.toJSON(newPageList));
     }
 
     /**
@@ -93,7 +90,6 @@ public class SysNoticeController {
      */
     @RequestMapping(value = "/fetch_header_notice", method = RequestMethod.GET)
     public Result<JSONObject> fetchNotice(@RequestParam("userId") String userId){
-        Result<JSONObject> result = new Result<>();
         try {
             Page<SysNotice> noticePage = new Page(0,5);
             noticePage = noticeService.fetchHeaderNotice(noticePage,userId, CATEGORY_NOTICE);
@@ -106,32 +102,29 @@ public class SysNoticeController {
             json.put("noticeCount", noticePage.getTotal());
             json.put("announceList", announcePage.getRecords());
             json.put("announceCount", announcePage.getTotal());
-            result.setResult(json);
-            result.success("头部通知数据获取成功");
+
+            return Result.ok(json, "头部通知数据获取成功");
         } catch (Exception e) {
             log.error("获取头部通知数据失败！",e);
+            String errorMsg = e.getMessage();
             if(ExceptionUtil.getRootCause(e)!=null){
-                result.error500(ExceptionUtil.getRootCause(e).getMessage());
-            }else{
-                result.error500(e.getMessage());
+                errorMsg = ExceptionUtil.getRootCause(e).getMessage();
             }
+            return Result.result(ApiCode.FAIL,errorMsg,null);
         }
-        return result;
     }
 
     @RequestMapping(value = "/add", method = RequestMethod.POST)
-    public Result<SysNotice> add(@RequestBody SysNoticeModel sysNoticeModel){
-        Result<SysNotice> result = new Result<>();
+    public Result<Boolean> add(@RequestBody SysNoticeModel sysNoticeModel){
         try {
             SysNotice sysNotice = new SysNotice();
             sysNoticeModel.setDelFlag(DEL_FLAG_0.toString());
             sysNoticeModel.setPublishState(UNPUBLISHED_STATE);
             noticeService.saveNotice(sysNoticeModel);
-            result.success("添加成功！");
+            return Result.ok();
         } catch (Exception e) {
             log.error(e.getMessage(),e);
-            result.error500("操作失败");
+            return Result.error(e.getMessage());
         }
-        return result;
     }
 }

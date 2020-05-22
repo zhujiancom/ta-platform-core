@@ -2,8 +2,8 @@ package com.ta.platform.core.api;
 
 import com.ey.tax.toolset.core.StrUtil;
 import com.ta.platform.common.api.vo.Result;
-import com.ta.platform.common.modules.system.mapper.SysDictMapper;
-import com.ta.platform.common.modules.system.model.DuplicateBean;
+import com.ta.platform.common.module.mapper.SysDictMapper;
+import com.ta.platform.common.module.model.DuplicateBean;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class CommonValidateController {
 
     @RequestMapping(value = "/duplicate/check", method = RequestMethod.GET)
     @ApiOperation("重复校验接口")
-    public Result<Object> duplicateCheck(DuplicateBean duplicateBean){
+    public Result<Boolean> duplicateCheck(DuplicateBean duplicateBean){
         Long num = null;
         log.info("----duplicate check------："+ duplicateBean.toString());
 
@@ -40,7 +40,7 @@ public class CommonValidateController {
         }
 
         if(num == null || num == 0){
-            return Result.ok("该值可用！");
+            return Result.ok(true,"该值可用！");
         }else{
             log.info("该值不可用，系统中已存在！");
             return Result.error("该值不可用，系统中已存在！");

@@ -11,12 +11,11 @@ import com.ey.tax.toolset.core.exceptions.ExceptionUtil;
 import com.ta.platform.common.api.vo.Result;
 import com.ta.platform.common.constant.CacheConstant;
 import com.ta.platform.common.constant.CommonConstant;
-import com.ta.platform.common.modules.system.entity.SysDict;
-import com.ta.platform.common.modules.system.entity.SysDictItem;
-import com.ta.platform.common.modules.system.service.ISysDictItemService;
-import com.ta.platform.common.modules.system.service.ISysDictService;
+import com.ta.platform.common.module.entity.SysDict;
+import com.ta.platform.common.module.entity.SysDictItem;
+import com.ta.platform.common.module.service.ISysDictItemService;
+import com.ta.platform.common.module.service.ISysDictService;
 import com.ta.platform.common.system.model.DictModel;
-import com.ta.platform.common.tool.DictHelper;
 import com.ta.platform.core.query.SearchableQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +59,6 @@ public class SysDictController {
     @GetMapping(value="/page-list")
     public Result<Object> dictPageList(SysDict dict, @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
                                        @RequestParam(value="pageSize", defaultValue = "10") Integer pageSize, HttpServletRequest request){
-        Result<Object> result = new Result<>();
         QueryWrapper<SysDict> queryWrapper = SearchableQueryWrapper.buildQueryWrapper(dict, request.getParameterMap());
         Page<SysDict> page = new Page(pageNo, pageSize);
         IPage<SysDict> pageList = dictService.page(page, queryWrapper);
@@ -75,52 +73,46 @@ public class SysDictController {
         log.debug("查询当前页数量："+pageList.getSize());
         log.debug("查询结果数量："+pageList.getRecords().size());
         log.debug("数据总数："+pageList.getTotal());
-        result.setSuccess(true);
-        result.setResult(pageList);
-        return result;
+
+        return Result.ok(pageList);
     }
 
     @PostMapping(value="/add")
-    public Result<Object> add(@RequestBody SysDict sysDict){
-        Result<Object> result = new Result<>();
+    public Result<Boolean> add(@RequestBody SysDict sysDict){
         try {
             sysDict.setDelFlag(CommonConstant.DEL_FLAG_0);
             dictService.save(sysDict);
-            result.success("操作成功！");
+            return Result.ok();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            result.error500("操作失败！");
+            return Result.error();
         }
-        return result;
     }
 
     @PutMapping(value="/edit")
-    public Result<Object> edit(@RequestBody SysDict sysDict) {
-        Result<Object> result = new Result<>();
+    public Result<Boolean> edit(@RequestBody SysDict sysDict) {
         SysDict dbDict = dictService.getById(sysDict.getId());
         if(dbDict == null){
-            result.error500("未找到对应的实体！");
+            return Result.error("未找到对应的实体！");
         }else{
             boolean ok = dictService.updateById(sysDict);
             if(ok){
-                result.success("修改成功！");
+                return Result.ok();
             }
+            return Result.error();
         }
-        return result;
     }
 
     @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
     @CacheEvict(value= CacheConstant.SYS_DICT_CACHE, allEntries=true)
-    public Result<Object> delete(@RequestParam(name="id",required=true) String id) {
-        Result<Object> result = new Result<Object>();
+    public Result<Boolean> delete(@RequestParam(name="id",required=true) String id) {
         boolean ok = dictService.removeById(id);
         dictItemService.remove(new LambdaQueryWrapper<SysDictItem>().eq(SysDictItem::getDictId,id));
         if(ok) {
-            result.success("删除成功!");
+            return Result.ok();
         }else{
-            result.error500("删除失败!");
+            return Result.error();
         }
-        return result;
     }
 
     /**
@@ -130,20 +122,18 @@ public class SysDictController {
      */
     @RequestMapping(value = "/deleteBatch", method = RequestMethod.DELETE)
     @CacheEvict(value= CacheConstant.SYS_DICT_CACHE, allEntries=true)
-    public Result<Object> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
+    public Result<Boolean> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
         Result<Object> result = new Result<Object>();
         if(StrUtil.isEmpty(ids)) {
-            result.error500("参数不识别！");
+            return Result.error("参数不识别！");
         }else {
             dictService.removeByIds(Arrays.asList(ids.split(",")));
-            result.success("删除成功!");
+            return Result.ok();
         }
-        return result;
     }
 
     @PutMapping(value="/refreshCache")
-    public Result<Object> refreshCache(){
-        Result<Object> result = new Result<>();
+    public Result<Boolean> refreshCache(){
         // 清空字典缓存
         try {
             Set keys= redisTemplate.keys(CacheConstant.SYS_DICT_CACHE+"*");
@@ -154,12 +144,12 @@ public class SysDictController {
             redisTemplate.delete(keys2);
             redisTemplate.delete(keys3);
             redisTemplate.delete(keys4);
-            result.success("字典缓存刷新成功！");
+
+            return Result.ok("字典缓存刷新成功！");
         } catch (Exception e) {
             log.error(e.getMessage(),e);
-            result.error500("字典缓存刷新失败！");
+            return Result.error("字典缓存刷新失败！");
         }
-        return result;
     }
 
     //---------------- dict items -------------------------------
@@ -186,78 +176,69 @@ public class SysDictController {
             if(cause != null){
                 errMsg = cause.getMessage();
             }
-            return Result.error(errMsg);
+            return Result.error(5200,errMsg);
         }
     }
 
     @RequestMapping(value = "/item-label", method = RequestMethod.GET)
     public Result<String> getDictText(@RequestParam("dictCode") String dictCode, @RequestParam("itemCode") String itemCode){
-        Result<String> result = new Result<>();
         String text = dictService.queryDictTextByKey(dictCode, itemCode);
-        result.setResult(text);
-        result.setSuccess(true);
-        return result;
+        return Result.ok(text,"查询成功！");
     }
 
     @GetMapping(value = "/item/page-list")
     public Result<Object> itemsPageList(SysDictItem dictItem, @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
                                         @RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize, HttpServletRequest request){
-        Result<Object> result = new Result<>();
         QueryWrapper<SysDictItem> queryWrapper = SearchableQueryWrapper.buildQueryWrapper(dictItem,request.getParameterMap());
         Page<SysDictItem> page = new Page<>(pageNo, pageSize);
         IPage<SysDictItem> pageList = dictItemService.page(page, queryWrapper);
 //        List<JSONObject> realPageList = pageList.getRecords().stream().map(item -> DictHelper.parseDictField(item)).collect(Collectors.toList());
 //        IPage newPageList = pageList;
 //        newPageList.setRecords(realPageList);
-        result.setSuccess(true);
-        result.setResult(pageList);
-        return result;
+
+        return Result.ok(pageList);
     }
 
     @PostMapping(value = "/item/add")
     @CacheEvict(value= CacheConstant.SYS_DICT_CACHE, allEntries=true)
-    public Result<Object> addItem(@RequestBody SysDictItem dictItem){
-        Result<Object> result = new Result<>();
+    public Result<Boolean> addItem(@RequestBody SysDictItem dictItem){
         try {
             dictItemService.save(dictItem);
-            result.success("操作成功！");
+            return Result.ok();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            result.error500("操作失败！");
+            return Result.error();
         }
-        return result;
     }
 
     @PutMapping(value="/item/edit")
     @CacheEvict(value= CacheConstant.SYS_DICT_CACHE, allEntries=true)
-    public Result<Object> editItem(@RequestBody SysDictItem dictItem) {
-        Result<Object> result = new Result<>();
+    public Result<Boolean> editItem(@RequestBody SysDictItem dictItem) {
         SysDictItem dbDictItem = dictItemService.getById(dictItem.getId());
         if(dbDictItem == null){
-            result.error500("未找到对应的实体！");
+            return Result.error("未找到对应的实体！");
         }else{
             boolean ok = dictItemService.updateById(dictItem);
             if(ok){
-                result.success("修改成功！");
+                return Result.ok();
             }
+            return Result.error();
         }
-        return result;
     }
 
     @RequestMapping(value = "/item/delete", method = RequestMethod.DELETE)
     @CacheEvict(value=CacheConstant.SYS_DICT_CACHE, allEntries=true)
-    public Result<SysDictItem> deleteItem(@RequestParam(name="id",required=true) String id) {
-        Result<SysDictItem> result = new Result<SysDictItem>();
+    public Result<Boolean> deleteItem(@RequestParam(name="id",required=true) String id) {
         SysDictItem dbDictItem = dictItemService.getById(id);
         if(dbDictItem==null) {
-            result.error500("未找到对应实体");
+            return Result.error("未找到对应的实体！");
         }else {
             boolean ok = dictItemService.removeById(id);
             if(ok) {
-                result.success("删除成功!");
+                return Result.ok();
             }
+            return Result.error();
         }
-        return result;
     }
 
 }

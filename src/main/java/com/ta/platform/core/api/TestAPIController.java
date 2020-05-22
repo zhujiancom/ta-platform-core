@@ -2,6 +2,7 @@ package com.ta.platform.core.api;
 
 import com.ta.platform.common.api.vo.Result;
 import com.ta.platform.common.clientapi.GatewayAPIClient;
+import com.ta.platform.common.vo.LoginUserRedisVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +28,9 @@ public class TestAPIController {
 
     @ApiOperation(value = "测试用户鉴权接口")
     @RequestMapping(value = "/auth/login-user")
-    public Result<Object> testAuthApi(@RequestParam("token") String token){
-        Result<Object> result = gatewayAPIClient.getLoginUser(token);
-        log.info("username = "+result.getResult());
+    public Result<LoginUserRedisVo> testAuthApi(@RequestParam("token") String token){
+        Result<LoginUserRedisVo> result = gatewayAPIClient.getLoginUser(token);
+        log.info("username = "+result.getMessage());
         return result;
     }
 }
