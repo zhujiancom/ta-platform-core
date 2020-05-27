@@ -27,7 +27,7 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
   datasource:
-    url: jdbc:mysql://${my-db-server-host}:3306/ta_platform_authority?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&tinyInt1isBit=false
+    url: jdbc:mysql://${my-db-server-host}:3306/ta_platform_authc?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&tinyInt1isBit=false
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver

@@ -1,11 +1,15 @@
 package com.ta.platform.core.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ey.tax.toolset.core.BeanUtil;
 import com.ey.tax.toolset.core.collection.CollectionUtil;
 import com.ta.platform.common.constant.CommonConstant;
+import com.ta.platform.core.constant.BizConstant;
+import com.ta.platform.core.convert.SysNoticeConvert;
+import com.ta.platform.core.endpoint.WebSocketEndPoint;
 import com.ta.platform.core.entity.SysNotice;
 import com.ta.platform.core.entity.SysNoticeAction;
 import com.ta.platform.core.mapper.SysNoticeActionMapper;
@@ -18,10 +22,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Creator: zhuji
@@ -39,6 +46,9 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
 
     @Autowired
     private List<IReceiverSelector> receiverSelectors;
+
+    @Autowired
+    private WebSocketEndPoint webSocketEndPoint;
 
     @Transactional
     @Override
@@ -63,8 +73,7 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
 
     @Override
     public void updateNotice(SysNoticeModel sysNoticeModel) {
-        SysNotice sysNotice = new SysNotice();
-        BeanUtil.copyProperties(sysNoticeModel, sysNotice);
+        SysNotice sysNotice = SysNoticeConvert.INSTANCE.toSysNotice(sysNoticeModel);
         noticeMapper.updateById(sysNotice);
         final String noticeId = sysNotice.getId();
         Optional<IReceiverSelector> receiverSelector = receiverSelectors.stream().filter(s -> s.support(sysNoticeModel.getReceiverType())).findAny();
@@ -90,5 +99,50 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
     @Override
     public Page<SysNotice> fetchHeaderNotice(Page<SysNotice> page, String userId,String category){
        return page.setRecords(noticeMapper.queryUnreadNoticeListByCategory(page,userId, category));
+    }
+
+    /**
+     * 发布通知
+     * @param sysNotice
+     */
+    @Override
+    public void publishNotice(SysNotice sysNotice) {
+        LambdaQueryWrapper<SysNoticeAction> queryWrapper = new LambdaQueryWrapper<SysNoticeAction>();
+        queryWrapper.eq(SysNoticeAction::getNoticeId, sysNotice.getId());
+        List<SysNoticeAction> noticeActionList = noticeActionMapper.selectList(queryWrapper);
+        List<String> receiverUserIds = noticeActionList.stream().map(a -> a.getUserId()).collect(Collectors.toList());
+        sysNotice.setPublishTime(new Date());
+        sysNotice.setPublishState(BizConstant.PUBLISH_STATE_DEPLOY);
+        noticeMapper.updateById(sysNotice);
+        webSocketEndPoint.sendMoreMessage(receiverUserIds, "发布通知公告！");
+    }
+
+    /**
+     * 发布通知
+     * @param sysNotice
+     */
+    @Override
+    public void revokeNotice(SysNotice sysNotice) {
+        LambdaQueryWrapper<SysNoticeAction> queryWrapper = new LambdaQueryWrapper<SysNoticeAction>();
+        queryWrapper.eq(SysNoticeAction::getNoticeId, sysNotice.getId());
+        List<SysNoticeAction> noticeActionList = noticeActionMapper.selectList(queryWrapper);
+        List<String> receiverUserIds = noticeActionList.stream().map(a -> a.getUserId()).collect(Collectors.toList());
+        sysNotice.setPublishState(BizConstant.PUBLISH_STATE_REVOKE);
+        sysNotice.setCancelTime(new Date());
+        noticeMapper.updateById(sysNotice);
+        webSocketEndPoint.sendMoreMessage(receiverUserIds, "撤销通知公告！");
+    }
+
+    @Override
+    public void readNotice(String noticeId, String userId) {
+        LambdaQueryWrapper<SysNoticeAction> queryWrapper = new LambdaQueryWrapper<SysNoticeAction>();
+        queryWrapper.eq(SysNoticeAction::getNoticeId, noticeId);
+        queryWrapper.eq(SysNoticeAction::getUserId, userId);
+        SysNoticeAction noticeAction = noticeActionMapper.selectOne(queryWrapper);
+        if(noticeAction != null){
+            noticeAction.setReadState(CommonConstant.HAS_READ_FLAG);
+            noticeAction.setReadTime(new Date());
+            noticeActionMapper.updateById(noticeAction);
+        }
     }
 }

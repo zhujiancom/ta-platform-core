@@ -9,12 +9,19 @@ import com.ey.tax.toolset.core.StrUtil;
 import com.ey.tax.toolset.core.exceptions.ExceptionUtil;
 import com.ta.platform.common.api.ApiCode;
 import com.ta.platform.common.api.vo.Result;
+import com.ta.platform.common.constant.CommonConstant;
 import com.ta.platform.common.tool.DictHelper;
+import com.ta.platform.common.tool.JwtUtil;
 import com.ta.platform.core.entity.SysNotice;
+import com.ta.platform.core.entity.SysNoticeAction;
 import com.ta.platform.core.model.SysNoticeModel;
 import com.ta.platform.core.service.impl.SysNoticeServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -117,7 +124,6 @@ public class SysNoticeController {
     @RequestMapping(value = "/add", method = RequestMethod.POST)
     public Result<Boolean> add(@RequestBody SysNoticeModel sysNoticeModel){
         try {
-            SysNotice sysNotice = new SysNotice();
             sysNoticeModel.setDelFlag(DEL_FLAG_0.toString());
             sysNoticeModel.setPublishState(UNPUBLISHED_STATE);
             noticeService.saveNotice(sysNoticeModel);
@@ -126,5 +132,59 @@ public class SysNoticeController {
             log.error(e.getMessage(),e);
             return Result.error(e.getMessage());
         }
+    }
+
+    @DeleteMapping(value = "/delete")
+    public Result<Boolean> delete(@RequestParam(value = "id") String id){
+        SysNotice sysNotice = noticeService.getById(id);
+        if(sysNotice == null){
+            return Result.error("未找到对应实体！");
+        }
+        sysNotice.setDelFlag(CommonConstant.DEL_FLAG_1.toString());
+        boolean ok = noticeService.updateById(sysNotice);
+        if(ok){
+            return Result.ok("删除成功！");
+        }else{
+            return Result.error("删除失败！");
+        }
+    }
+
+    @DeleteMapping(value = "/deleteBatch")
+    public Result<Boolean> deleteBatch(@RequestParam(value = "ids") String ids){
+        if(StrUtil.isBlank(ids)){
+            return Result.error("参数不识别！");
+        }
+        String[] idArr = ids.split(",");
+        for(int i=0;i<idArr.length;i++){
+            SysNotice sysNotice = noticeService.getById(idArr[i]);
+            sysNotice.setDelFlag(CommonConstant.DEL_FLAG_1.toString());
+            noticeService.updateById(sysNotice);
+        }
+        return Result.ok("批量删除成功！");
+    }
+
+    @GetMapping(value = "/publish")
+    public Result<Boolean> publishAnnounce(@RequestParam(value = "id") String id,HttpServletRequest request){
+        String token = JwtUtil.getToken(request);
+        String currentUser = JwtUtil.getUsername(token);
+        SysNotice sysNotice = noticeService.getById(id);
+        sysNotice.setPublisher(currentUser);
+        noticeService.publishNotice(sysNotice);
+        return Result.ok("公告发布成功");
+    }
+
+    @GetMapping(value = "/revoke")
+    public Result<Boolean> revokeAnnounce(@RequestParam(value = "id") String id){
+        SysNotice sysNotice = noticeService.getById(id);
+        noticeService.revokeNotice(sysNotice);
+        return Result.ok("公告撤销成功");
+    }
+
+    @PutMapping(value = "/read")
+    public Result<Boolean> readNotice(@RequestBody JSONObject jsonObject){
+        String id = jsonObject.getString("id");
+        String userId = jsonObject.getString("userId");
+        noticeService.readNotice(id, userId);
+        return Result.ok();
     }
 }

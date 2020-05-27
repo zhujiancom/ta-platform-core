@@ -17,4 +17,10 @@ public interface ISysNoticeService extends IService<SysNotice> {
     void updateNotice(SysNoticeModel sysNoticeModel);
 
     Page<SysNotice> fetchHeaderNotice(Page<SysNotice> page, String userId, String category);
+
+    void publishNotice(SysNotice sysNotice);
+
+    void revokeNotice(SysNotice sysNotice);
+
+    void readNotice(String noticeId, String userId);
 }

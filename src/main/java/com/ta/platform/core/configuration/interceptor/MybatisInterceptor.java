@@ -1,14 +1,12 @@
 package com.ta.platform.core.configuration.interceptor;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.ey.tax.toolset.core.ReflectUtil;
 import com.ey.tax.toolset.core.StrUtil;
 import com.ta.platform.common.api.vo.Result;
 import com.ta.platform.common.clientapi.GatewayAPIClient;
+import com.ta.platform.common.constant.RequestConstant;
 import com.ta.platform.common.tool.ApplicationContextProvider;
 import com.ta.platform.common.vo.LoginUserRedisVo;
-import com.ta.platform.core.DefConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.binding.MapperMethod.ParamMap;
 import org.apache.ibatis.executor.Executor;
@@ -25,7 +23,6 @@ import org.springframework.stereotype.Component;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Field;
 import java.util.Date;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -161,7 +158,7 @@ public class MybatisInterceptor implements Interceptor {
 
 	private String getLoginUserName() {
 		HttpServletRequest request = ApplicationContextProvider.getHttpServletRequest();
-		String token = request.getHeader(DefConstants.X_ACCESS_TOKEN);
+		String token = request.getHeader(RequestConstant.X_ACCESS_TOKEN);
 		Result<LoginUserRedisVo> result = gatewayAPIClient.getLoginUser(token);
 		if(result.getData() != null){
 			// 1. 如果真正的接口返回string字符串， 则通过JSONObject 转换
